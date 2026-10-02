@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/components/use-current-user";
-import { clearAuthSession } from "@/lib/auth";
+import { clearAuthSession, getAuthToken } from "@/lib/auth";
+import { logoutApi } from "@/api/API_Auth";
 
 export interface Category {
   id: string;
@@ -95,9 +96,16 @@ export default function Navbar({
     }
   };
 
-  const handleLogout = () => {
-    clearAuthSession();
-    router.replace("/login");
+  const handleLogout = async () => {
+    try {
+      const token = getAuthToken();
+      await logoutApi(token);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      clearAuthSession();
+      router.replace("/login");
+    }
   };
 
   return (
