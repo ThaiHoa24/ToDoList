@@ -4,11 +4,16 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
 import AddTask from "@/components/addtask";
-import { createCategoryApi } from "@/api/API_Category";
+import {
+  createCategoryApi,
+  getCategoriesApi,
+  deleteCategoryApi,
+} from "@/api/API_Category";
 
 export type TaskStatus = "todo" | "progress" | "review" | "done";
 export type TaskPriority = "low" | "medium" | "high";
@@ -152,6 +157,27 @@ export function TaskBoardProvider({ children }: { children: React.ReactNode }) {
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const remoteCats = await getCategoriesApi();
+        if (Array.isArray(remoteCats) && remoteCats.length > 0) {
+          setCategories(
+            remoteCats.map((cat, idx) => ({
+              id: String(cat.id),
+              name: cat.name,
+              color: cat.color || CATEGORY_COLORS[idx % CATEGORY_COLORS.length],
+              count: 0,
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn("Could not fetch categories from backend:", err);
+      }
+    }
+    loadCategories();
+  }, []);
+
   const categoriesWithCounts = useMemo<Category[]>(() => {
     return categories.map((cat) => ({
       ...cat,
@@ -223,8 +249,9 @@ export function TaskBoardProvider({ children }: { children: React.ReactNode }) {
           color: assignedColor,
           icon: null,
         });
-        if (res?.data?.id) {
-          categoryId = res.data.id;
+        const createdId = res?.data?.id ?? res?.id;
+        if (createdId) {
+          categoryId = String(createdId);
         }
       } catch (err) {
         console.warn("API create category fallback to mock UUID:", err);
@@ -246,6 +273,9 @@ export function TaskBoardProvider({ children }: { children: React.ReactNode }) {
   const removeCategory = useCallback((id: string) => {
     setCategories((prev) => prev.filter((c) => c.id !== id && c.name !== id));
     setActiveCategory((prev) => (prev === id ? "All" : prev));
+    deleteCategoryApi(id).catch((err) => {
+      console.warn("Failed to delete category on backend:", err);
+    });
   }, []);
 
   const handleAddTask = useCallback(

@@ -25,7 +25,7 @@ export class CategoriesRepository {
       },
       orderBy: {
         created_at: 'asc',
-      },
+      },  
     });
   }
 
