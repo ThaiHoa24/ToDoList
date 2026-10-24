@@ -1,27 +1,20 @@
 {
-  "name": "todolist",
-  "version": "0.1.0",
+  "name": "todolist-monorepo",
+  "version": "1.0.0",
   "private": true,
+  "description": "Fullstack ToDo List application with Next.js Frontend and NestJS Backend",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "axios": "^1.20.0",
-    "next": "16.3.5",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.5",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "dev:fe": "npm --prefix frontend run dev",
+    "dev:be": "npm --prefix backend run start:dev",
+    "build:fe": "npm --prefix frontend run build",
+    "build:be": "npm --prefix backend run build",
+    "build": "npm run build:be && npm run build:fe",
+    "lint:fe": "npm --prefix frontend run lint",
+    "lint:be": "npm --prefix backend run lint",
+    "lint": "npm run lint:be && npm run lint:fe"
   }
 }

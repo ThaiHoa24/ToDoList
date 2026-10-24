@@ -313,12 +313,15 @@ function TaskCard({ task }: { task: Task }) {
 export default function DashboardPage() {
   const {
     tasks: taskList,
+    filteredTasks,
     categories,
     stats: dynamicStats,
     toastMessage,
     openAddTask,
     dismissToast,
   } = useTaskBoard();
+
+  const currentTaskList = filteredTasks || taskList;
 
   const quickFilters = [
     { label: "All", value: dynamicStats.total, active: true },
@@ -507,7 +510,7 @@ export default function DashboardPage() {
 
               <div className="grid gap-3 xl:grid-cols-4">
                 {columns.map((column) => {
-                  const columnTasks = taskList.filter(
+                  const columnTasks = currentTaskList.filter(
                     (task) => task.status === column.id,
                   );
 
@@ -563,23 +566,29 @@ export default function DashboardPage() {
                 <Icon name="spark" className="h-5 w-5 text-amber-500" />
               </div>
               <div className="space-y-2">
-                {categories.map((category) => (
-                  <div
-                    className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2"
-                    key={category.name}
-                  >
-                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      {category.name}
-                    </span>
-                    <strong className="text-xs text-slate-400">
-                      {category.count}
-                    </strong>
-                  </div>
-                ))}
+                {categories.length === 0 ? (
+                  <p className="py-3 text-center text-xs italic text-slate-400">
+                    No categories yet
+                  </p>
+                ) : (
+                  categories.map((category) => (
+                    <div
+                      className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2"
+                      key={category.name}
+                    >
+                      <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        {category.name}
+                      </span>
+                      <strong className="text-xs text-slate-400">
+                        {category.count}
+                      </strong>
+                    </div>
+                  ))
+                )}
               </div>
             </section>
 

@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📝 ToDo List - Fullstack Project
 
-## Getting Started
+Dự án ToDo List fullstack gồm Frontend (**Next.js**) và Backend (**NestJS**) được tổ chức chung trong một monorepo gọn gàng, tách biệt rõ ràng giữa hai phần.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 📁 Cấu trúc thư mục (Project Structure)
+
+```text
+ToDoList/
+├── backend/            # 🚀 NestJS Backend API (Prisma, PostgreSQL, JWT Auth,...)
+│   ├── prisma/         # Prisma schema & migrations
+│   ├── src/            # Mã nguồn backend (Controllers, Modules, Services, DTOs)
+│   ├── test/           # Unit & e2e test
+│   ├── .env.example    # Mẫu biến môi trường backend
+│   └── package.json
+│
+├── frontend/           # 💻 Next.js Frontend (React 19, Tailwind CSS, App Router)
+│   ├── public/         # Static assets
+│   ├── src/            # Mã nguồn frontend (App Router, Components, Hooks)
+│   ├── .env.example    # Mẫu biến môi trường frontend
+│   └── package.json
+│
+├── docs/               # 📄 Tài liệu đặc tả và hướng dẫn dự án (.docx)
+│   ├── ToDo_List_Backend_Handoff_Specification.docx
+│   └── ToDo_List_FE_Guide_v2.docx
+│
+├── .gitignore          # Quy tắc ignore chung cho toàn bộ dự án
+├── package.json        # Quản lý script khởi chạy tập trung từ thư mục gốc
+└── README.md           # Tài liệu hướng dẫn dự án
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ⚙️ Cấu hình Môi trường (.env)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Backend (`backend/.env`)
+Tạo file `backend/.env` (tham khảo `backend/.env.example`):
+```env
+PORT=3001
+DATABASE_URL="postgresql://postgres:password@localhost:5432/todo_list_db?schema=public"
+JWT_SECRET="your_jwt_secret_key"
+JWT_EXPIRES_IN="7d"
+```
+> **Lưu ý về Port:** Mặc định Next.js chạy trên cổng `3000`. Nên đặt Backend chạy ở cổng `3001` (hoặc cổng khác `3000`) để tránh xung đột cổng khi chạy song song cả hai.
 
-## Learn More
+### 2. Frontend (`frontend/.env.local`)
+Tạo file `frontend/.env.local`:
+```env
+# URL trỏ đến backend API
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🚀 Hướng dẫn Cài đặt & Chạy dự án
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Cài đặt thư viện (Dependencies)
+Mở terminal tại thư mục gốc và cài đặt cho từng bên:
+```bash
+# Cài đặt backend
+cd backend
+npm install
 
-## Deploy on Vercel
+# Cài đặt frontend
+cd ../frontend
+npm install
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Chạy dự án từ thư mục gốc (Root scripts)
+Bạn có thể chạy trực tiếp từ thư mục gốc mà không cần phải `cd` vào từng thư mục:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Lệnh | Chức năng |
+|---|---|
+| `npm run dev` | Khởi chạy đồng thời cả Backend và Frontend |
+| `npm run dev:be` | Khởi chạy riêng Backend (chế độ watch) |
+| `npm run dev:fe` | Khởi chạy riêng Frontend |
+| `npm run build` | Build production cho cả Backend và Frontend |
+| `npm run lint` | Chạy linter cho cả 2 dự án |
+
+---
+
+## 🗄️ Cơ sở dữ liệu (Prisma & PostgreSQL)
+Để khởi tạo hoặc cập nhật Database:
+```bash
+cd backend
+npx prisma migrate dev
+npx prisma generate
+```

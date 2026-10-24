@@ -5,15 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/components/use-current-user";
 import { clearAuthSession, getAuthToken } from "@/lib/auth";
 import { logoutApi } from "@/api/API_Auth";
-
-export interface Category {
-  id: string;
-  name: string;
-  color?: string;
-  count: number;
-  isNeutral?: boolean;
-  isUncategorized?: boolean;
-}
+import { useTaskBoard, type Category } from "@/components/task-board-context";
 
 interface NavbarProps {
   activeNav?: string;
@@ -34,19 +26,27 @@ export default function Navbar({
 }: NavbarProps) {
   const router = useRouter();
   const [activeNav, setActiveNav] = useState(initialNav);
-  const [activeCategory, setActiveCategory] = useState(initialCat);
   const [newCatName, setNewCatName] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const user = useCurrentUser();
 
-  const [categories, setCategories] = useState<Category[]>([
-    { id: "all", name: "All", count: 0, isNeutral: true },
-    { id: "study", name: "Study", color: "#2563eb", count: 0 },
-    { id: "work", name: "Work", color: "#0f766e", count: 0 },
-    { id: "personal", name: "Personal", color: "#7c3aed", count: 0 },
-    { id: "shopping", name: "Shopping", color: "#b45309", count: 0 },
-    { id: "uncategorized", name: "Uncategorized", count: 0, isUncategorized: true },
-  ]);
+  const {
+    tasks,
+    categories: contextCategories,
+    activeCategory: ctxActiveCategory,
+    setActiveCategory: setCtxActiveCategory,
+    addCategory: ctxAddCategory,
+    removeCategory: ctxRemoveCategory,
+  } = useTaskBoard();
+
+  const activeCategory = ctxActiveCategory || initialCat;
+
+  const displayCategories: Category[] = [
+    { id: "all", name: "All", count: tasks.length, isNeutral: true },
+    ...contextCategories,
+  ];
+
+  const [isAddingCat, setIsAddingCat] = useState(false);
 
   const handleNavClick = (nav: string) => {
     setActiveNav(nav);
@@ -55,42 +55,28 @@ export default function Navbar({
   };
 
   const handleCategoryClick = (cat: string) => {
-    setActiveCategory(cat);
+    setCtxActiveCategory(cat);
     onCategoryChange?.(cat);
     setMobileOpen(false);
   };
 
-  const handleAddCategory = (e: React.FormEvent) => {
+  const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = newCatName.trim();
-    if (!trimmed) return;
+    if (!trimmed || isAddingCat) return;
 
-    const colors = ["#2563eb", "#0f766e", "#7c3aed", "#b45309", "#db2777", "#ea580c"];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-
-    const newCat: Category = {
-      id: Date.now().toString(),
-      name: trimmed,
-      color: randomColor,
-      count: 0,
-    };
-
-    setCategories((prev) => {
-      const uncatIndex = prev.findIndex((c) => c.isUncategorized);
-      if (uncatIndex !== -1) {
-        const next = [...prev];
-        next.splice(uncatIndex, 0, newCat);
-        return next;
-      }
-      return [...prev, newCat];
-    });
-
-    setNewCatName("");
+    setIsAddingCat(true);
+    try {
+      await ctxAddCategory(trimmed);
+      setNewCatName("");
+    } finally {
+      setIsAddingCat(false);
+    }
   };
 
   const handleRemoveCategory = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setCategories((prev) => prev.filter((cat) => cat.id !== id));
+    ctxRemoveCategory(id);
     if (activeCategory === id) {
       handleCategoryClick("All");
     }
@@ -321,7 +307,7 @@ export default function Navbar({
 
             {/* Category List */}
             <div className="space-y-1">
-              {categories.map((cat) => {
+              {displayCategories.map((cat) => {
                 const isActive = activeCategory === cat.name;
 
                 return (
@@ -395,25 +381,31 @@ export default function Navbar({
                   type="text"
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
-                  placeholder="Add category"
-                  className="w-full bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                  placeholder={isAddingCat ? "Adding..." : "Add category"}
+                  disabled={isAddingCat}
+                  className="w-full bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none disabled:opacity-50"
                 />
                 <button
                   type="submit"
+                  disabled={isAddingCat}
                   aria-label="Add category"
-                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-1 rounded-lg transition-colors shrink-0 cursor-pointer"
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-1 rounded-lg transition-colors shrink-0 cursor-pointer disabled:opacity-50"
                 >
-                  <svg
-                    aria-hidden="true"
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
-                  </svg>
+                  {isAddingCat ? (
+                    <span className="w-4 h-4 block animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                  ) : (
+                    <svg
+                      aria-hidden="true"
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
+                    </svg>
+                  )}
                 </button>
               </div>
             </form>
