@@ -7,28 +7,79 @@ import { UpdateCategoryDto } from './dto/update-category.dto.js';
 export class CategoriesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createCategoryDto: CreateCategoryDto, userId: string) {
-    // TODO: Create category in database via Prisma
-    return { id: 'mock-category-id', ...createCategoryDto, userId };
+  async create(createCategoryDto: CreateCategoryDto, userId: number) {
+    return this.prisma.categories.create({
+      data: {
+        name: createCategoryDto.name,
+        color: createCategoryDto.color ?? null,
+        icon: createCategoryDto.icon ?? null,
+        user_id: userId,
+      },
+    });
   }
 
-  async findAll(_userId: string) {
-    // TODO: Get all categories of user from database
-    return [];
+  async findAll(userId: number) {
+    return this.prisma.categories.findMany({
+      where: {
+        user_id: userId,
+      },
+      orderBy: {
+        created_at: 'asc',
+      },
+    });
   }
 
-  async findById(id: string, userId: string) {
-    // TODO: Get category by id and userId from database
-    return { id, userId };
+  async findById(id: number, userId: number) {
+    return this.prisma.categories.findFirst({
+      where: {
+        id,
+        user_id: userId,
+      },
+    });
   }
 
-  async update(id: string, updateCategoryDto: UpdateCategoryDto, userId: string) {
-    // TODO: Update category in database
-    return { id, ...updateCategoryDto, userId };
+  async findByName(name: string, userId: number) {
+    return this.prisma.categories.findFirst({
+      where: {
+        name,
+        user_id: userId,
+      },
+    });
   }
 
-  async delete(id: string, userId: string) {
-    // TODO: Delete category in database
-    return { id, userId, deleted: true };
+  async update(id: number, updateCategoryDto: UpdateCategoryDto, _userId: number) {
+    const data: {
+      name?: string;
+      color?: string | null;
+      icon?: string | null;
+      updated_at: Date;
+    } = {
+      updated_at: new Date(),
+    };
+
+    if (updateCategoryDto.name !== undefined) {
+      data.name = updateCategoryDto.name;
+    }
+    if (updateCategoryDto.color !== undefined) {
+      data.color = updateCategoryDto.color;
+    }
+    if (updateCategoryDto.icon !== undefined) {
+      data.icon = updateCategoryDto.icon;
+    }
+
+    return this.prisma.categories.update({
+      where: {
+        id,
+      },
+      data,
+    });
+  }
+
+  async delete(id: number, _userId: number) {
+    return this.prisma.categories.delete({
+      where: {
+        id,
+      },
+    });
   }
 }

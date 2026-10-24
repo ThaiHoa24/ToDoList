@@ -21,44 +21,39 @@ export class CategoriesController {
 
   @Post()
   create(
-    @CurrentUser('id') userId: string,
+    @CurrentUser('id') userId: number | string,
     @Body() createCategoryDto: CreateCategoryDto,
   ) {
-    const currentId = userId || 'mock-user-id';
-    return this.categoriesService.create(createCategoryDto, currentId);
+    return this.categoriesService.create(createCategoryDto, userId);
   }
 
   @Get()
-  findAll(@CurrentUser('id') userId: string) {
-    const currentId = userId || 'mock-user-id';
-    return this.categoriesService.findAll(currentId);
+  findAll(@CurrentUser('id') userId: number | string) {
+    return this.categoriesService.findAll(userId);
   }
 
   @Get(':id')
   findOne(
-    @CurrentUser('id') userId: string,
+    @CurrentUser('id') userId: number | string,
     @Param('id') id: string,
   ) {
-    const currentId = userId || 'mock-user-id';
-    return this.categoriesService.findOne(id, currentId);
+    return this.categoriesService.findOne(id, userId);
   }
 
   @Patch(':id')
   update(
-    @CurrentUser('id') userId: string,
+    @CurrentUser('id') userId: number | string,
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
-    const currentId = userId || 'mock-user-id';
-    return this.categoriesService.update(id, updateCategoryDto, currentId);
+    return this.categoriesService.update(id, updateCategoryDto, userId);
   }
 
   @Delete(':id')
   remove(
-    @CurrentUser('id') userId: string,
+    @CurrentUser('id') userId: number | string,
     @Param('id') id: string,
   ) {
-    const currentId = userId || 'mock-user-id';
-    return this.categoriesService.remove(id, currentId);
+    return this.categoriesService.remove(id, userId);
   }
 }
