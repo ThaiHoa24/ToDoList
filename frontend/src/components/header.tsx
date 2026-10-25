@@ -5,28 +5,36 @@ import { useCurrentUser } from "@/components/use-current-user";
 
 interface HeaderProps {
   userName?: string;
+  searchValue?: string;
   onSearch?: (query: string) => void;
   className?: string;
 }
 
 export default function Header({
   userName: initialUserName,
+  searchValue,
   onSearch,
   className = "",
 }: HeaderProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [internalQuery, setInternalQuery] = useState("");
   const [hasNotification, setHasNotification] = useState(true);
   const currentUser = useCurrentUser();
   const userName = initialUserName || currentUser?.name || "Guest";
 
+  const currentSearch = searchValue !== undefined ? searchValue : internalQuery;
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    setSearchQuery(val);
+    if (searchValue === undefined) {
+      setInternalQuery(val);
+    }
     onSearch?.(val);
   };
 
   const handleClearSearch = () => {
-    setSearchQuery("");
+    if (searchValue === undefined) {
+      setInternalQuery("");
+    }
     onSearch?.("");
   };
 
@@ -65,12 +73,12 @@ export default function Header({
           <input
             id="header-search-input"
             type="search"
-            value={searchQuery}
+            value={currentSearch}
             onChange={handleSearchChange}
             placeholder="Search title or notes"
             className="w-full bg-transparent text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
           />
-          {searchQuery && (
+          {currentSearch && (
             <button
               type="button"
               onClick={handleClearSearch}

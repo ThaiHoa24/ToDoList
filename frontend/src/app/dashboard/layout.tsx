@@ -49,7 +49,7 @@ export default function DashboardLayout({
 }
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
-  const { openAddTask } = useTaskBoard();
+  const { openAddTask, searchQuery, setSearchQuery } = useTaskBoard();
   const user = useCurrentUser();
 
   return (
@@ -60,7 +60,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* Main Right Content: Header on top (sticky) + scrollable content below */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden pt-14 md:pt-0 bg-slate-50 min-w-0">
         {/* App Header component */}
-        <Header userName={user?.name} />
+        <Header
+          userName={user?.name}
+          searchValue={searchQuery}
+          onSearch={setSearchQuery}
+        />
 
         {/* Scrollable Dashboard Content Area */}
         <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-4 sm:p-6 lg:p-8">

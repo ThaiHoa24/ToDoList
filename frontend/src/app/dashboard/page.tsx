@@ -1,9 +1,12 @@
 "use client";
 
+import React, { useMemo } from "react";
 import {
   type Task,
   type TaskPriority,
   type TaskStatus,
+  type QuickFilter,
+  type SortOption,
   useTaskBoard,
 } from "@/components/task-board-context";
 
@@ -28,7 +31,7 @@ const columns: Array<{
   {
     id: "review",
     title: "In Review",
-    subtitle: "Overdue or needs review",
+    subtitle: "Review & Testing",
     accent: "border-t-amber-500",
   },
   {
@@ -61,9 +64,9 @@ const statusLabels: Record<TaskStatus, string> = {
 
 const deadlineStyles: Record<Task["deadlineTone"], string> = {
   neutral: "text-slate-500",
-  today: "text-blue-700",
+  today: "text-blue-700 font-semibold",
   upcoming: "text-slate-600",
-  overdue: "text-rose-700",
+  overdue: "text-rose-700 font-semibold",
 };
 
 function Icon({
@@ -208,21 +211,34 @@ function SummaryCard({
 }
 
 function TaskCard({ task }: { task: Task }) {
+  const { toggleTaskStatus, changeTaskStatus, openEditTask, deleteTask } =
+    useTaskBoard();
+
+  const isCompleted = task.completed || task.status === "done";
+
+  const nextStatuses: Record<TaskStatus, TaskStatus[]> = {
+    todo: ["progress", "done"],
+    progress: ["review", "done"],
+    review: ["progress", "done"],
+    done: ["todo"],
+  };
+
   return (
     <article
-      className={`rounded-lg border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-        task.completed
-          ? "border-emerald-100 bg-emerald-50/40"
+      className={`group rounded-lg border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+        isCompleted
+          ? "border-emerald-100 bg-emerald-50/30"
           : task.deadlineTone === "overdue"
             ? "border-rose-200"
             : "border-slate-200"
       }`}
       data-task-id={task.id}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-wrap gap-1.5">
+      {/* Top Badges & Actions */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <span
-            className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700"
+            className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700"
             style={{ color: task.categoryColor }}
           >
             <span
@@ -232,69 +248,96 @@ function TaskCard({ task }: { task: Task }) {
             {task.category}
           </span>
           <span
-            className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-semibold capitalize ${priorityStyles[task.priority]}`}
+            className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize ${priorityStyles[task.priority]}`}
           >
             {task.priority}
           </span>
           <span
-            className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-semibold ${statusStyles[task.status]}`}
+            className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusStyles[task.status]}`}
           >
             {statusLabels[task.status]}
           </span>
         </div>
 
+        {/* Action buttons (Edit & Delete) */}
         <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
-            className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            onClick={() => openEditTask(task)}
+            className="rounded-md p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 cursor-pointer"
             aria-label={`Edit ${task.title}`}
+            title="Chỉnh sửa task"
           >
             <Icon name="edit" />
           </button>
           <button
             type="button"
-            className="rounded-md p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-200"
+            onClick={() => deleteTask(task.id)}
+            className="rounded-md p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-200 cursor-pointer"
             aria-label={`Delete ${task.title}`}
+            title="Xóa task"
           >
             <Icon name="trash" />
           </button>
         </div>
       </div>
 
-      <div className="mt-4 flex items-start justify-between gap-3">
+      {/* Task Title & Overdue Flag */}
+      <div className="mt-3 flex items-start justify-between gap-3">
         <h3
-          className={`text-sm font-bold leading-6 text-slate-900 ${
-            task.completed ? "text-slate-500 line-through" : ""
+          className={`text-sm font-bold leading-5 text-slate-900 ${
+            isCompleted ? "text-slate-400 line-through" : ""
           }`}
         >
           {task.title}
         </h3>
-        {task.deadlineTone === "overdue" && (
-          <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-bold text-rose-700">
+        {task.deadlineTone === "overdue" && !isCompleted && (
+          <span className="shrink-0 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700">
             Overdue
           </span>
         )}
       </div>
 
+      {/* Notes */}
       {task.notes && (
-        <p className="mt-2 text-sm leading-6 text-slate-500">{task.notes}</p>
+        <p className="mt-2 text-xs leading-5 text-slate-500 line-clamp-2">
+          {task.notes}
+        </p>
       )}
 
-      <label className="mt-4 flex min-h-10 cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-600">
-        <input
-          aria-label={
-            task.completed
-              ? `Mark ${task.title} as active`
-              : `Mark ${task.title} as completed`
-          }
-          className="h-4 w-4 rounded border-slate-300 text-blue-600"
-          defaultChecked={task.completed}
-          type="checkbox"
-        />
-        <span>{task.completed ? "Completed" : "Mark done"}</span>
-      </label>
+      {/* Bottom status checkbox & Quick move */}
+      <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+        <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-slate-600">
+          <input
+            type="checkbox"
+            checked={isCompleted}
+            onChange={() => toggleTaskStatus(task.id)}
+            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+            aria-label={isCompleted ? "Mark as active" : "Mark as done"}
+          />
+          <span className={isCompleted ? "text-emerald-700 font-bold" : ""}>
+            {isCompleted ? "Done" : "Mark done"}
+          </span>
+        </label>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-500">
+        {/* Quick move buttons */}
+        <div className="flex items-center gap-1">
+          {nextStatuses[task.status]?.map((st) => (
+            <button
+              key={st}
+              type="button"
+              onClick={() => changeTaskStatus(task.id, st)}
+              className="px-1.5 py-0.5 text-[10px] font-medium rounded border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+              title={`Chuyển sang ${statusLabels[st]}`}
+            >
+              ➔ {statusLabels[st]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Meta (Deadline & Notes icon) */}
+      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-500">
         <span
           className={`inline-flex items-center gap-1.5 ${deadlineStyles[task.deadlineTone]}`}
         >
@@ -315,27 +358,56 @@ export default function DashboardPage() {
     tasks: taskList,
     filteredTasks,
     categories,
+    activeCategory,
+    setActiveCategory,
+    activeFilter,
+    setActiveFilter,
+    searchQuery,
+    setSearchQuery,
+    sortBy,
+    setSortBy,
     stats: dynamicStats,
     toastMessage,
     openAddTask,
+    clearCompleted,
     dismissToast,
+    isLoadingTasks,
   } = useTaskBoard();
 
-  const currentTaskList = filteredTasks || taskList;
+  // Current Date display dynamically
+  const todayInfo = useMemo(() => {
+    const now = new Date();
+    return {
+      monthShort: now.toLocaleDateString("en-US", { month: "short" }),
+      dayNumber: now.getDate(),
+      fullDate: now.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }),
+    };
+  }, []);
 
-  const quickFilters = [
-    { label: "All", value: dynamicStats.total, active: true },
-    { label: "Active", value: dynamicStats.active },
-    { label: "Completed", value: dynamicStats.completed },
+  const quickFilters: Array<{
+    key: QuickFilter;
+    label: string;
+    value: number;
+  }> = [
+    { key: "all", label: "All", value: dynamicStats.total },
+    { key: "active", label: "Active", value: dynamicStats.active },
+    { key: "completed", label: "Completed", value: dynamicStats.completed },
     {
+      key: "today",
       label: "Today",
       value: taskList.filter((task) => task.deadlineTone === "today").length,
     },
     {
+      key: "upcoming",
       label: "Upcoming",
       value: taskList.filter((task) => task.deadlineTone === "upcoming").length,
     },
-    { label: "Overdue", value: dynamicStats.overdue },
+    { key: "overdue", label: "Overdue", value: dynamicStats.overdue },
   ];
 
   return (
@@ -348,13 +420,14 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={dismissToast}
-            className="ml-2 rounded p-1 text-slate-400 hover:text-white"
+            className="ml-2 rounded p-1 text-slate-400 hover:text-white cursor-pointer"
           >
             ✕
           </button>
         </div>
       )}
 
+      {/* Summary Cards */}
       <section
         className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6"
         aria-label="Dashboard summary"
@@ -389,16 +462,20 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      {/* Main Task Board Section */}
       <section
         className="rounded-lg border border-slate-200 bg-white shadow-sm"
         aria-label="Daily task board"
       >
+        {/* Board Top Header */}
         <div className="flex flex-col gap-4 border-b border-slate-200 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
-              <strong className="text-base leading-none">Sep</strong>
+              <strong className="text-base leading-none">
+                {todayInfo.monthShort}
+              </strong>
               <span className="mt-1 text-xs font-semibold text-slate-300">
-                19
+                {todayInfo.dayNumber}
               </span>
             </div>
             <div>
@@ -406,34 +483,42 @@ export default function DashboardPage() {
                 Today is
               </p>
               <h1 className="mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
-                Saturday, September 19, 2026
+                {todayInfo.fullDate}
               </h1>
             </div>
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="flex flex-wrap gap-2">
-              <button
-                className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                type="button"
-                aria-expanded="false"
-                aria-haspopup="listbox"
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Category Filter Selector */}
+              <select
+                value={activeCategory}
+                onChange={(e) => setActiveCategory(e.target.value)}
+                className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-200 cursor-pointer"
+                aria-label="Filter by category"
               >
-                <Icon name="filter" />
-                Filters: All
-                <Icon name="chevron" className="h-3.5 w-3.5" />
-              </button>
-              <button
-                className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                type="button"
-                aria-expanded="false"
-                aria-haspopup="listbox"
+                <option value="All">All Categories</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name} ({c.count})
+                  </option>
+                ))}
+              </select>
+
+              {/* Sort Selector */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-200 cursor-pointer"
+                aria-label="Sort tasks"
               >
-                <Icon name="sort" />
-                Sort: Newest
-                <Icon name="chevron" className="h-3.5 w-3.5" />
-              </button>
+                <option value="newest">Sort: Newest</option>
+                <option value="oldest">Sort: Oldest</option>
+                <option value="priority">Sort: Priority</option>
+                <option value="title">Sort: Title (A-Z)</option>
+              </select>
             </div>
+
             <button
               onClick={openAddTask}
               className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-bold text-white shadow-sm shadow-blue-500/20 transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer"
@@ -445,54 +530,76 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        {/* Board Body */}
+        <div className="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_300px]">
           <div className="space-y-4">
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
+            {/* Search and Clear Completed Toolbar */}
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px]">
               <label className="flex h-11 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 focus-within:border-blue-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100">
                 <span className="sr-only">Search task title or notes</span>
                 <Icon name="search" className="h-4 w-4 text-slate-400" />
                 <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
-                  placeholder="Search title or notes"
+                  placeholder="Search title, notes, or category..."
                   type="search"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="text-slate-400 hover:text-slate-600 text-xs p-1"
+                  >
+                    ✕
+                  </button>
+                )}
               </label>
+
               <button
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 type="button"
+                onClick={clearCompleted}
+                disabled={dynamicStats.completed === 0}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 Clear completed
               </button>
             </div>
 
+            {/* Quick Filter Tabs */}
             <div
               className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
               aria-label="Quick filters"
             >
-              {quickFilters.map((filter) => (
-                <button
-                  key={filter.label}
-                  className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-200 ${
-                    filter.active
-                      ? "border-blue-200 bg-blue-50 text-blue-700"
-                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                  }`}
-                  type="button"
-                >
-                  {filter.label}
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-[11px] ${
-                      filter.active
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-slate-100 text-slate-500"
+              {quickFilters.map((filter) => {
+                const isActive = activeFilter === filter.key;
+                return (
+                  <button
+                    key={filter.key}
+                    onClick={() => setActiveFilter(filter.key)}
+                    className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-200 cursor-pointer ${
+                      isActive
+                        ? "border-blue-200 bg-blue-50 text-blue-700 font-bold"
+                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                     }`}
+                    type="button"
                   >
-                    {filter.value}
-                  </span>
-                </button>
-              ))}
+                    {filter.label}
+                    <span
+                      className={`rounded-full px-1.5 py-0.5 text-[11px] ${
+                        isActive
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      {filter.value}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
+            {/* Kanban Columns */}
             <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3">
               <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
@@ -510,7 +617,7 @@ export default function DashboardPage() {
 
               <div className="grid gap-3 xl:grid-cols-4">
                 {columns.map((column) => {
-                  const columnTasks = currentTaskList.filter(
+                  const columnTasks = filteredTasks.filter(
                     (task) => task.status === column.id,
                   );
 
@@ -534,12 +641,18 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="flex flex-1 flex-col gap-3">
-                        {columnTasks.length ? (
+                        {isLoadingTasks ? (
+                          // Loading Skeletons
+                          <div className="space-y-3">
+                            <div className="h-28 rounded-lg border border-slate-200 bg-slate-100/60 animate-pulse" />
+                            <div className="h-24 rounded-lg border border-slate-200 bg-slate-100/60 animate-pulse" />
+                          </div>
+                        ) : columnTasks.length ? (
                           columnTasks.map((task) => (
                             <TaskCard key={task.id} task={task} />
                           ))
                         ) : (
-                          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 text-center text-sm font-medium text-slate-400">
+                          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 text-center text-sm font-medium text-slate-400 min-h-24">
                             No matching tasks
                           </div>
                         )}
@@ -551,8 +664,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Right Aside: Category List & Statistics */}
           <aside className="space-y-4">
-
             <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <div>
@@ -566,84 +679,57 @@ export default function DashboardPage() {
                 <Icon name="spark" className="h-5 w-5 text-amber-500" />
               </div>
               <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory("All")}
+                  className={`w-full flex items-center justify-between rounded-md border px-3 py-2 text-left transition-colors cursor-pointer ${
+                    activeCategory === "All"
+                      ? "border-blue-300 bg-blue-50 text-blue-700 font-bold"
+                      : "border-slate-200 hover:bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  <span className="text-sm">All Tasks</span>
+                  <strong className="text-xs text-slate-500">
+                    {dynamicStats.total}
+                  </strong>
+                </button>
                 {categories.length === 0 ? (
                   <p className="py-3 text-center text-xs italic text-slate-400">
-                    No categories yet
+                    Chưa có danh mục nào
                   </p>
                 ) : (
-                  categories.map((category) => (
-                    <div
-                      className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2"
-                      key={category.name}
-                    >
-                      <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
-                        <span
-                          className="h-2.5 w-2.5 rounded-full"
-                          style={{ backgroundColor: category.color }}
-                        />
-                        {category.name}
-                      </span>
-                      <strong className="text-xs text-slate-400">
-                        {category.count}
-                      </strong>
-                    </div>
-                  ))
+                  categories.map((category) => {
+                    const isSelected = activeCategory === category.name;
+                    return (
+                      <button
+                        type="button"
+                        key={category.id}
+                        onClick={() => setActiveCategory(category.name)}
+                        className={`w-full flex items-center justify-between rounded-md border px-3 py-2 text-left transition-colors cursor-pointer ${
+                          isSelected
+                            ? "border-blue-300 bg-blue-50 text-blue-700 font-bold"
+                            : "border-slate-200 hover:bg-slate-50 text-slate-700"
+                        }`}
+                      >
+                        <span className="inline-flex items-center gap-2 text-sm">
+                          <span
+                            className="h-2.5 w-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: category.color }}
+                          />
+                          <span className="truncate">{category.name}</span>
+                        </span>
+                        <strong className="text-xs text-slate-500">
+                          {category.count}
+                        </strong>
+                      </button>
+                    );
+                  })
                 )}
-              </div>
-            </section>
-
-            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="mb-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  App states
-                </span>
-                <h2 className="mt-1 text-base font-bold text-slate-950">
-                  Feedback queue
-                </h2>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-                  <Icon name="loader" className="mt-0.5 h-4 w-4" />
-                  <div>
-                    <strong className="block">Loading tasks</strong>
-                    <span className="text-blue-700/80">
-                      Skeleton state before list render.
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-                  <Icon name="check" className="mt-0.5 h-4 w-4" />
-                  <div>
-                    <strong className="block">Task updated</strong>
-                    <span className="text-emerald-700/80">
-                      Toast for create, edit, complete.
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                  <Icon name="undo" className="mt-0.5 h-4 w-4" />
-                  <div>
-                    <strong className="block">Deleted task</strong>
-                    <span className="text-amber-700/80">
-                      Undo available before final delete.
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
-                  <Icon name="alert" className="mt-0.5 h-4 w-4" />
-                  <div>
-                    <strong className="block">Validation error</strong>
-                    <span className="text-rose-700/80">
-                      Title is required after trim.
-                    </span>
-                  </div>
-                </div>
               </div>
             </section>
           </aside>
         </div>
       </section>
-
     </div>
   );
 }

@@ -2,9 +2,9 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { createTaskApi } from "@/api/API_createTask";
-import { createCategoryApi } from "@/api/API_Category";
 import { clearAuthSession } from "@/lib/auth";
 
 interface AddTaskProps {
@@ -29,6 +29,7 @@ export default function AddTask({
   onAddTask,
   categories = [],
 }: AddTaskProps) {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<"High" | "Medium" | "Low">("Medium");
   const [categoryId, setCategoryId] = useState(categories[0]?.id || "");
@@ -124,7 +125,7 @@ export default function AddTask({
             "Phiên đăng nhập đã hết hạn (Token expired). Đang chuyển hướng về trang đăng nhập..."
           );
           setTimeout(() => {
-            window.location.href = "/login";
+            router.push("/login");
           }, 1500);
           return;
         }

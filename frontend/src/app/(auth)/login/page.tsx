@@ -232,7 +232,7 @@ export default function LoginPage() {
                   email: "google.user@gmail.com",
                 })
               );
-            } catch (e) {}
+            } catch {}
             router.push("/dashboard");
           }}
           className="w-full flex items-center justify-center gap-2.5 bg-slate-100/90 hover:bg-slate-200/80 active:scale-[0.99] text-slate-700 font-bold text-xs tracking-wider uppercase py-3 sm:py-3.5 rounded-xl transition-all cursor-pointer"
